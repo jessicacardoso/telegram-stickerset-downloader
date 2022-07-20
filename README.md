@@ -4,7 +4,7 @@ Aplicação em python responsável por baixar todos os stickers contidos em uma 
 
 ## Pré-requisitos
 
-Para utilizar essa ferramenta, é necessária a criação de uma *API KEY* do *Telegram* e autorizar o uso do aplicativo através do número de telefone informado.
+Para utilizar essa ferramenta, é necessária a criação de uma *API KEY* do *Telegram* e autorizar o uso do aplicativo através do número de telefone informado, além de um banco de dados postgresql.
 
 ### Telegram API KEY
 Ter uma **TELEGRAM API KEY** (*api_id* e *api_hash* pair) válido, para isso:
@@ -17,7 +17,7 @@ Ter uma **TELEGRAM API KEY** (*api_id* e *api_hash* pair) válido, para isso:
 
 ### Autorizar aplicativo
 
-Copie o arquivo `config.yaml` para o caminho ` ~/.config/StickerApp/config.yaml`, substitua os campos *api_id* e *api_hash* com as informações obtidas na seção anterior. Feito isso, execute o código python `user_auth.py`e informe seu número de telefone e o código de confirmação enviado via Telegram. Abaixo, mostramos a mensagem que apareceu em nosso terminal.
+Copie o arquivo `config.yaml` para o caminho ` ~/.config/StickerApp/config.yaml`, substitua os campos *api_id* e *api_hash* com as informações obtidas na seção anterior. Em seguida, instale as dependências contidas no `requirements.txt`, execute o código python `user_auth.py`e informe seu número de telefone e o código de confirmação enviado via Telegram. Abaixo, mostramos a mensagem que apareceu em nosso terminal.
 
 ```bash
 Welcome to Pyrogram (version 2.0.30)
@@ -36,4 +36,5 @@ Depois da autorização ser realizada com sucesso, podemos encerrar o processo a
 
 ## Rodando a aplicação
 
-Para baixar o StickerSet de interesse, no arquivo `scraper.py` troque o *short_name* pelo *pack* de interesse. Em seguida basta executar o código, as imagens serão baixadas na pasta downloads.
+Execute o *script* `scraper.py`, selecione os canais de interesse e aguarde o download.
+
