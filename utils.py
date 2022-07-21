@@ -71,6 +71,7 @@ async def register_sticker(app, file_id: str):
     file_path = connect(select_sticker, file_unique_id=message.sticker.file_unique_id)
 
     if file_path != "":
+        await message.delete()
         return
 
     image_path = await app.download_media(

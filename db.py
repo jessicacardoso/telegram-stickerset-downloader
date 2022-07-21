@@ -58,6 +58,7 @@ def create_tables(cur):
         )
         """,
     )
+    print("Criando tabelas...")
     for command in commands:
         cur.execute(command)
 
