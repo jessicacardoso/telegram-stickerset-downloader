@@ -43,7 +43,10 @@ def register_channel(chat) -> datetime:
     last_access = connect(query_channel, channel_id=chat.id)
     created = connect(create_or_update_channel, channel_id=chat.id, title=chat.title)
     if created:
-        console.print(f":speaker: - O canal {chat.title} foi inserido a base de dados", style="bold cyan")
+        console.print(
+            f":speaker: - O canal {chat.title} foi inserido a base de dados",
+            style="bold cyan",
+        )
     return last_access
 
 
@@ -62,38 +65,35 @@ def register_sticket_set(sticker_set):
     }
     created = connect(create_or_update_stickerset, attrs=sticker_set_fields)
     if created:
-        console.print(f":framed_picture: - O stickerset {sticker_set.short_name} foi inserido a base de dados", style="bold cyan")
+        console.print(
+            f":framed_picture: - O stickerset {sticker_set.short_name} foi inserido a base de dados",
+            style="bold cyan",
+        )
 
 
-async def register_sticker(app, file_id: str):
-    message = await app.send_sticker(CHANNEL_ID, file_id)
+async def register_sticker(app, sticker):
 
-    file_path = connect(select_sticker, file_unique_id=message.sticker.file_unique_id)
+    file_path = connect(select_sticker, file_unique_id=sticker.file_unique_id)
 
     if file_path != "":
-        await message.delete()
         return
 
     image_path = await app.download_media(
-        message.sticker.file_id,
-        os.path.join(config["output_dir"].get(), message.sticker.set_name) + "/",
+        sticker.file_id,
+        os.path.join(config["output_dir"].get(), sticker.set_name) + "/",
     )
 
     sticker_fields = {
-        "file_id": message.sticker.file_id,
-        "file_unique_id": message.sticker.file_unique_id,
-        "date": message.sticker.date,
-        "width": message.sticker.width,
-        "height": message.sticker.height,
-        "is_animated": message.sticker.is_animated,
-        "is_video": message.sticker.is_video,
-        "emoji": message.sticker.emoji,
-        "set_name": message.sticker.set_name,
+        "file_id": sticker.file_id,
+        "file_unique_id": sticker.file_unique_id,
+        "date": sticker.date,
+        "width": sticker.width,
+        "height": sticker.height,
+        "is_animated": sticker.is_animated,
+        "is_video": sticker.is_video,
+        "emoji": sticker.emoji,
+        "set_name": sticker.set_name,
         "image_path": image_path,
     }
 
     connect(insert_sticker, attrs=sticker_fields)
-
-    # image_bytes_io = await app.download_media(message.sticker.file_id, in_memory=True)
-    # with open(image_bytes_io.name, "wb") as f:
-    #     f.write(image_bytes_io.getbuffer())

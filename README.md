@@ -4,7 +4,17 @@ Aplicação em python responsável por baixar todos os stickers contidos em uma 
 
 ## Pré-requisitos
 
-Para utilizar essa ferramenta, é necessária a criação de uma *API KEY* do *Telegram* e autorizar o uso do aplicativo através do número de telefone informado, além de um banco de dados postgresql.
+Para utilizar essa ferramenta, é necessária a criação de uma *API KEY* do *Telegram* e autorizar o uso do aplicativo através do número de telefone informado, além de um banco de dados postgresql. Via docker pode ser criado com o seguinte comando:
+
+```sh
+docker run -d \
+    --name some-postgres \
+    -e POSTGRES_PASSWORD=mysecretpassword \
+    -e PGDATA=/var/lib/postgresql/data/pgdata \
+    -v /var/tmp/postgresql:/var/lib/postgresql/data \
+    -p 5432:5432 \
+    postgres
+```
 
 ### Telegram API KEY
 Ter uma **TELEGRAM API KEY** (*api_id* e *api_hash* pair) válido, para isso:
@@ -35,6 +45,5 @@ Depois da autorização ser realizada com sucesso, podemos encerrar o processo a
 
 
 ## Rodando a aplicação
-
-Execute o *script* `scraper.py`, selecione os canais de interesse e aguarde o download.
+Execute o arquivo `db.py` para criar as tabelas do banco de dados, em seguida rode o *script* `scraper.py`, selecione os canais de interesse e aguarde o download.
 

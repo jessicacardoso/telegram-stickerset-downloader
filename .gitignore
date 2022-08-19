@@ -16,3 +16,4 @@ venv.bak/
 .vscode/
 downloads/
 *.session
+*.session-journal

@@ -26,7 +26,7 @@ def create_tables(cur):
         """
         CREATE TABLE channels (
             channel_id BIGSERIAL PRIMARY KEY,
-            title VARCHAR(255) NOT NULL,
+            title TEXT NOT NULL,
             access_date TIMESTAMP NOT NULL
         )
         """,
@@ -34,8 +34,8 @@ def create_tables(cur):
         CREATE TABLE stickersets (
             id BIGSERIAL PRIMARY KEY,
             access_hash BIGINT NOT NULL,
-            title VARCHAR(255) NOT NULL,
-            short_name VARCHAR(50) NOT null,
+            title TEXT NOT NULL,
+            short_name TEXT NOT null,
             count INTEGER NOT NULL,
             hash BIGINT NOT NULL,
             official BOOLEAN,
@@ -45,16 +45,16 @@ def create_tables(cur):
         """,
         """
         CREATE TABLE stickers (
-            file_unique_id VARCHAR(255) NOT NULL PRIMARY KEY,
-            file_id VARCHAR(255) NOT NULL,
+            file_unique_id TEXT NOT NULL PRIMARY KEY,
+            file_id TEXT NOT NULL,
             date TIMESTAMP NOT NULL,
             width INTEGER NOT NULL,
             height INTEGER NOT NULL,
             is_animated BOOLEAN NOT NULL,
             is_video BOOLEAN NOT NULL,
-            emoji VARCHAR(10) NOT NULL,
-            set_name VARCHAR(50) NOT NULL,
-            image_path VARCHAR(255) NOT NULL
+            emoji TEXT NOT NULL,
+            set_name TEXT NOT NULL,
+            image_path TEXT NOT NULL
         )
         """,
     )
@@ -113,8 +113,6 @@ def create_or_update_channel(cur, channel_id, title):
 
 
 def create_or_update_stickerset(cur, attrs):
-    current_timestamp = datetime.utcnow()
-
     query = """
         SELECT id, access_hash, title, short_name, count, hash, official, animated, videos
         FROM stickersets
@@ -183,7 +181,7 @@ def select_sticker(cur, file_unique_id: str) -> str:
 
 def insert_sticker(cur, attrs):
     sql = """
-    INSERT INTO public.stickers
+    INSERT INTO stickers
     (file_unique_id, file_id, "date", width, height, is_animated, is_video, emoji, set_name, image_path)
     VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
     """
@@ -230,7 +228,7 @@ def connect(func, *args, **kwargs):
     finally:
         if conn is not None:
             conn.close()
-        return data
+    return data
 
 
 if __name__ == "__main__":
