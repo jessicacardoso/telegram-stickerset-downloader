@@ -40,7 +40,8 @@ def create_tables(cur):
             hash BIGINT NOT NULL,
             official BOOLEAN,
             animated BOOLEAN,
-            videos BOOLEAN
+            videos BOOLEAN,
+            access_date TIMESTAMP NOT NULL
         )
         """,
         """
@@ -58,9 +59,9 @@ def create_tables(cur):
         )
         """,
     )
-    print("Criando tabelas...")
     for command in commands:
         cur.execute(command)
+    print("Executada query para criar tabelas...")
 
 
 def query_channel(cur, channel_id):
@@ -112,7 +113,20 @@ def create_or_update_channel(cur, channel_id, title):
     return created
 
 
+def get_most_recent_stickerset(cur):
+    query = """
+        SELECT short_name
+        FROM stickersets
+        ORDER BY access_date DESC;
+    """
+    cur.execute(query)
+    row = cur.fetchone()
+    return row[0]
+
+
 def create_or_update_stickerset(cur, attrs):
+    current_timestamp = datetime.utcnow()
+
     query = """
         SELECT id, access_hash, title, short_name, count, hash, official, animated, videos
         FROM stickersets
@@ -127,8 +141,8 @@ def create_or_update_stickerset(cur, attrs):
         cur.execute(
             """
         INSERT INTO stickersets
-        (id, access_hash, title, short_name, count, hash, official, animated, videos)
-        VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s);
+        (id, access_hash, title, short_name, count, hash, official, animated, videos, access_date)
+        VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
 
         """,
             (
@@ -141,13 +155,14 @@ def create_or_update_stickerset(cur, attrs):
                 attrs["official"],
                 attrs["animated"],
                 attrs["videos"],
+                current_timestamp.isoformat(),
             ),
         )
     else:
         cur.execute(
             """
         UPDATE stickersets
-        SET access_hash=%s, title=%s, count=%s, hash=%s, official=%s, animated=%s, videos=%s
+        SET access_hash=%s, title=%s, count=%s, hash=%s, official=%s, animated=%s, videos=%s, access_date=%s
         WHERE id = %s and short_name = %s;
         """,
             (
@@ -158,6 +173,7 @@ def create_or_update_stickerset(cur, attrs):
                 attrs["official"],
                 attrs["animated"],
                 attrs["videos"],
+                current_timestamp.isoformat(),
                 attrs["id"],
                 attrs["short_name"],
             ),
@@ -168,7 +184,7 @@ def create_or_update_stickerset(cur, attrs):
 def select_sticker(cur, file_unique_id: str) -> str:
     """Retorna o caminho onde foi salvo o sticker no disco"""
     query = """
-        SELECT file_unique_id, file_id, "date", width, height, is_animated, is_video, emoji, set_name, image_path
+        SELECT image_path
         FROM stickers
         WHERE file_unique_id = %s
     """
@@ -176,7 +192,7 @@ def select_sticker(cur, file_unique_id: str) -> str:
     row = cur.fetchone()
     if not row:
         return ""
-    return row[9]
+    return row[0]
 
 
 def insert_sticker(cur, attrs):

@@ -13,13 +13,17 @@ from rich.progress import track
 from rich.logging import RichHandler
 from rich.console import Console
 import os
-
+from db import connect, get_most_recent_stickerset
 from utils import (
+    convert_datetime_to_utc,
+    load_temporary_file,
     prompt_channels,
     register_channel,
     register_sticker,
-    CHANNEL_ID,
     register_sticket_set,
+    remove_temporary_file,
+    save_temporary_file,
+    zero_datetime,
 )
 
 ADD_STICKERS_URLS = ["http://t.me/addstickers"]
@@ -59,12 +63,29 @@ async def get_stickerset_from_link(entities, stickersets):
                     stickersets[short_name] = sticker_set
 
 
-async def get_stickersets_from_chat(channel: str, start_date: datetime):
-    """Obtém todos os StickerSets de um dado canal do Telegram."""
+async def get_stickersets_from_chat(
+    chat: str, oldest_date: datetime = zero_datetime()
+) -> dict:
+    """Obtém todos os StickerSets de um dado chat do Telegram. O histórico de
+    um chat do telegram é percorrido do mais recente ao mais antigo.
+
+    Args:
+        chat (str): Se o chat for público, informe o nome de usuário, caso
+        contrário o id.
+        oldest_date (datetime, optional): Permite limitar a data mais antiga
+        permitida na varredura. Se nada for informado, percorre todo o chat.
+
+    Returns:
+        dict: Dicionário contendo todos os stickersets encontrados desde a data
+        mais antiga até a atual.
+    """
     stickersets = {}
     index = 1
-    with console.status(f"[bold green]Scanning {channel} channel messages..."):
-        async for message in app.get_chat_history(str(channel), offset_date=start_date):
+    with console.status(f"[bold green]Scanning {chat} messages..."):
+        async for message in app.get_chat_history(str(chat)):
+            message_date = convert_datetime_to_utc(message.date)
+            if message_date < oldest_date:
+                break
             if message.media is MessageMediaType.STICKER:
                 sticker = message.sticker
                 if not sticker.set_name:
@@ -73,12 +94,14 @@ async def get_stickersets_from_chat(channel: str, start_date: datetime):
                     stickersets[
                         message.sticker.set_name
                     ] = await get_sticker_set_by_short_name(app, sticker.set_name)
-                    console.log(f"Added {sticker.set_name}")
+                    console.log(sticker.set_name)
             else:
                 await get_stickerset_from_link(message.entities, stickersets)
             index += 1
             if index % 1000 == 0:
                 console.clear()
+        if stickersets:
+            save_temporary_file(stickersets, chat)
     return stickersets
 
 
@@ -100,6 +123,7 @@ async def process_stickers(sticker_set):
             access_hash=sticker_doc.access_hash,
             media_id=sticker_doc.id,
         ).encode()
+
         file_unique_id = FileUniqueId(
             file_unique_type=FileUniqueType.DOCUMENT, media_id=sticker_doc.id
         ).encode()
@@ -118,6 +142,15 @@ async def process_stickers(sticker_set):
         await register_sticker(app, sticker)
 
 
+async def get_stickersets(channel_id, oldest_date):
+    stickersets = load_temporary_file(channel_id)
+    if stickersets:
+        latest_stickerset = connect(get_most_recent_stickerset)
+        return latest_stickerset, stickersets
+    else:
+        return None, await get_stickersets_from_chat(channel_id, oldest_date)
+
+
 async def main():
     async with app:
         selected_channels = await prompt_channels(
@@ -129,11 +162,26 @@ async def main():
         )
         for channel_id in selected_channels:
             chat = await app.get_chat(channel_id)
-            start_date = register_channel(chat)
-            stickersets = await get_stickersets_from_chat(channel_id, start_date)
-            for sticker_set in stickersets.values():
+            oldest_date = register_channel(chat)
+            latest_stickerset, stickersets = await get_stickersets(
+                channel_id, oldest_date
+            )
+            is_last_stickerset = False
+            for name, sticker_set in stickersets.items():
+
+                if (
+                    latest_stickerset
+                    and is_last_stickerset == False
+                    and name != latest_stickerset
+                ):
+                    continue
+                if name == latest_stickerset:
+                    is_last_stickerset = True
+
                 register_sticket_set(sticker_set.set)
                 await process_stickers(sticker_set)
+            # Remove stickersets salvos temporariamente no disco
+            remove_temporary_file(channel_id)
 
 
 app.run(main())

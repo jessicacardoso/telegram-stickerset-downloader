@@ -1,5 +1,6 @@
 confuse==2.0.0
 InquirerPy==0.3.4
 psycopg2_binary==2.9.3
-Pyrogram==2.0.30
+Pyrogram==2.0.41
 rich==12.5.1
+tgcrypto==1.2.3

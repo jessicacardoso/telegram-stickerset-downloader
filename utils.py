@@ -1,4 +1,6 @@
+from copyreg import pickle
 import os
+import pickle
 import confuse
 from rich.console import Console
 from InquirerPy import inquirer
@@ -17,7 +19,7 @@ from db import (
 console = Console()
 
 config = confuse.Configuration("StickerApp", __name__)
-CHANNEL_ID = str(config["channel_id"])
+TEMP_FILE = config["temp_file"].get()
 
 
 async def prompt_channels(channels_choice: list):
@@ -86,7 +88,7 @@ async def register_sticker(app, sticker):
     sticker_fields = {
         "file_id": sticker.file_id,
         "file_unique_id": sticker.file_unique_id,
-        "date": sticker.date,
+        "date": convert_datetime_to_utc(sticker.date),
         "width": sticker.width,
         "height": sticker.height,
         "is_animated": sticker.is_animated,
@@ -97,3 +99,27 @@ async def register_sticker(app, sticker):
     }
 
     connect(insert_sticker, attrs=sticker_fields)
+
+
+def zero_datetime() -> datetime:
+    return datetime.fromtimestamp(0, timezone.utc)
+
+
+def save_temporary_file(obj, prefix: str):
+    with open(TEMP_FILE.format(prefix=prefix), "wb") as f:
+        pickle.dump(obj, f)
+
+
+def load_temporary_file(prefix: str):
+    if os.path.exists(TEMP_FILE.format(prefix=prefix)):
+        with open(TEMP_FILE.format(prefix=prefix), "rb") as f:
+            return pickle.load(f)
+
+
+def remove_temporary_file(prefix: str):
+    if os.path.exists(TEMP_FILE.format(prefix=prefix)):
+        os.remove(TEMP_FILE.format(prefix=prefix))
+
+
+def convert_datetime_to_utc(date) -> datetime:
+    return datetime.fromtimestamp(date.timestamp(), timezone.utc)
