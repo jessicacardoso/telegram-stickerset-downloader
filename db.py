@@ -27,7 +27,7 @@ def create_tables(cur):
         CREATE TABLE channels (
             channel_id BIGSERIAL PRIMARY KEY,
             title TEXT NOT NULL,
-            access_date TIMESTAMP NOT NULL
+            access_date TIMESTAMP WITHOUT TIME ZONE NOT NULL
         )
         """,
         """
@@ -41,7 +41,7 @@ def create_tables(cur):
             official BOOLEAN,
             animated BOOLEAN,
             videos BOOLEAN,
-            access_date TIMESTAMP NOT NULL
+            access_date TIMESTAMP WITHOUT TIME ZONE NOT NULL
         )
         """,
         """
@@ -74,7 +74,7 @@ def query_channel(cur, channel_id):
     cur.execute(query, (channel_id,))
     row = cur.fetchone()
     if not row:
-        return datetime.fromtimestamp(0, timezone.utc)
+        return datetime.fromtimestamp(0, timezone.utc).replace(tzinfo=None)
     return row[0]
 
 

@@ -3,7 +3,6 @@ import logging
 import pyrogram.errors
 from pyrogram.enums import MessageMediaType, MessageEntityType
 from pyrogram import Client
-from pyrogram.file_id import FileId, FileType, FileUniqueId, FileUniqueType
 from pyrogram.enums import ChatType
 from pyrogram.raw.functions.messages import GetStickerSet
 from pyrogram.raw.types import InputStickerSetShortName
@@ -83,7 +82,7 @@ async def get_stickersets_from_chat(
     index = 1
     with console.status(f"[bold green]Scanning {chat} messages..."):
         async for message in app.get_chat_history(str(chat)):
-            message_date = convert_datetime_to_utc(message.date)
+            message_date = convert_datetime_to_utc(message.date).replace(tzinfo=None)
             if message_date < oldest_date:
                 break
             if message.media is MessageMediaType.STICKER:
@@ -109,36 +108,12 @@ async def process_stickers(sticker_set):
     """Dado um stickerset, essa função realiza a captura de todos os
     Stickers contidos no StickerSet.
     """
-    # https://stackoverflow.com/questions/70141745/get-sticker-set-by-link-shot-namepyrogram
-    # https://github.com/pyrogram/pyrogram/issues/975
     for sticker_doc in track(
         sticker_set.documents,
         description=f"[green]Processing {sticker_set.set.title}",
     ):
-
-        file_id = FileId(
-            file_type=FileType.STICKER,
-            dc_id=sticker_doc.dc_id,
-            file_reference=sticker_doc.file_reference,
-            access_hash=sticker_doc.access_hash,
-            media_id=sticker_doc.id,
-        ).encode()
-
-        file_unique_id = FileUniqueId(
-            file_unique_type=FileUniqueType.DOCUMENT, media_id=sticker_doc.id
-        ).encode()
-
-        sticker = Sticker(
-            file_unique_id=file_unique_id,
-            file_id=file_id,
-            date=datetime.fromtimestamp(sticker_doc.date),
-            width=sticker_doc.attributes[0].w,
-            height=sticker_doc.attributes[0].h,
-            is_animated=sticker_set.set.animated,
-            is_video=sticker_set.set.videos,
-            set_name=sticker_set.set.short_name,
-            emoji=sticker_doc.attributes[1].alt,
-        )
+        document_attributes = {type(attr): attr for attr in sticker_doc.attributes}
+        sticker = await Sticker._parse(app, sticker_doc, document_attributes)
         await register_sticker(app, sticker)
 
 
