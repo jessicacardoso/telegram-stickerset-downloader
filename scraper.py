@@ -15,6 +15,7 @@ import os
 from db import connect, get_most_recent_stickerset
 from utils import (
     convert_datetime_to_utc,
+    get_channel_access_date,
     load_temporary_file,
     prompt_channels,
     register_channel,
@@ -137,11 +138,12 @@ async def main():
         )
         for channel_id in selected_channels:
             chat = await app.get_chat(channel_id)
-            oldest_date = register_channel(chat)
+            access_date = get_channel_access_date(chat.id)
             latest_stickerset, stickersets = await get_stickersets(
-                channel_id, oldest_date
+                channel_id, access_date
             )
             is_last_stickerset = False
+            register_channel(chat)
             for name, sticker_set in stickersets.items():
 
                 if (

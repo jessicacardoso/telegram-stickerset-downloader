@@ -37,19 +37,24 @@ async def prompt_channels(channels_choice: list):
     return channels
 
 
-def register_channel(chat) -> datetime:
-    """Dado um chat, cadastra se não existir, caso contrário atualiza a data
-    de acesso. Essa função retorna a data anteriormente registrada, caso haja
-    cadastro.
+def get_channel_access_date(id) -> datetime:
+    """Obtém a última data de acesso de um dado canal, caso não tenha
+    cadastro então retorna a data 0 da biblioteca datetime.
     """
-    last_access = connect(query_channel, channel_id=chat.id)
+    return connect(query_channel, channel_id=id)
+
+
+def register_channel(chat) -> bool:
+    """Dado um chat, cadastra se não existir, caso contrário atualiza a data
+    de acesso. Essa função retorna verdadeiro se houve cadastro.
+    """
     created = connect(create_or_update_channel, channel_id=chat.id, title=chat.title)
     if created:
         console.print(
             f":speaker: - O canal {chat.title} foi inserido a base de dados",
             style="bold cyan",
         )
-    return last_access
+    return created
 
 
 def register_sticket_set(sticker_set):
